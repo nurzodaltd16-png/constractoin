@@ -1,0 +1,42 @@
+# Query: 
+# ContextLines: 1
+
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});
+
+async function generateContentWithMapsGrounding() {
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash",
+    contents: "What are the best Italian restaurants within a 15-minute walk from here?",
+    config: {
+      // Turn on grounding with Google Maps
+      tools: [{ googleMaps: {} }],
+      toolConfig: {
+        retrievalConfig: {
+          // Optionally provide the relevant location context (this is in Los Angeles)
+          latLng: {
+            latitude: 34.050481,
+            longitude: -118.248526,
+          },
+        },
+      },
+    },
+  });
+
+  console.log("Generated Response:");
+  console.log(response.text);
+
+  const grounding = response.candidates[0]?.groundingMetadata;
+  if (grounding?.groundingChunks) {
+    console.log("-".repeat(40));
+    console.log("Sources:");
+    for (const chunk of grounding.groundingChunks) {
+      if (chunk.maps) {
+        console.log(`- [${chunk.maps.title}](${chunk.maps.uri})`);
+      }
+    }
+  }
+}
+
+generateContentWithMapsGrounding();
